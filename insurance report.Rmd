@@ -1,0 +1,593 @@
+---
+title: "Analyzing insurance charges data"
+subtitle: "Report"
+author: "abdullah sami"
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float: yes
+    highlight: zenburn
+    df_print: paged
+  word_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+date: "`r Sys.Date()`"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 8, message = F, warning = F)
+```
+
+```{r}
+library(tidyverse)
+library(plotly)
+library(knitr)
+library(stargazer)
+library(kableExtra)
+```
+
+# About the author
+I'm a data analyst interested in human resources analysis. Feel free to check this project and others on [my GitHub page](https://github.com/0abdullah0sami0).
+
+# Introduction
+In this report, we are analyzing insurance charges dataset to discover the relationship between insurance charges and different factors. The data set is from [GitHub repository of Machine Learning with R datasets](https://github.com/stedy/Machine-Learning-with-R-datasets/blob/master/insurance.csv).
+
+```{r}
+insurance <- read.csv("insurance.csv")
+tbl <- matrix(dim(insurance))
+rownames(tbl) <- c("Observations", "Columns")
+
+kbl(tbl,caption = "Data dimension") %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+The dataset has 1338 observations and 7 variables. It includes 5 numeric/integer variables which are `age`, `bmi`, `children`, `charges`, and 3 categorical variables which are `sex`, `smoker`, and `region`.
+
+
+```{r results = 'hide'}
+stargazer(insurance,title = "Statistical summary",type = "html")
+```
+
+<table style="text-align:center"><caption><strong>Statistical summary</strong></caption>
+<tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">Statistic</td><td>N</td><td>Mean</td><td>St. Dev.</td><td>Min</td><td>Max</td></tr>
+<tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr><tr><td style="text-align:left">age</td><td>1,338</td><td>39.207</td><td>14.050</td><td>18</td><td>64</td></tr>
+<tr><td style="text-align:left">bmi</td><td>1,338</td><td>30.663</td><td>6.098</td><td>15.960</td><td>53.130</td></tr>
+<tr><td style="text-align:left">children</td><td>1,338</td><td>1.095</td><td>1.205</td><td>0</td><td>5</td></tr>
+<tr><td style="text-align:left">charges</td><td>1,338</td><td>13,270.420</td><td>12,110.010</td><td>1,121.874</td><td>63,770.430</td></tr>
+<tr><td colspan="6" style="border-bottom: 1px solid black"></td></tr></table>
+
+# Data exploration
+
+## Univariate analysis
+
+In this section, we are exploring, using charts and tables, the distribution of values of each features from the data set in order to understand the data sample we are working with.
+
+### The proportion of females and males in the data set
+
+```{r}
+plot_sex <- insurance %>%
+  group_by(sex) %>%
+  summarise(percent = round(n()/nrow(insurance),2)) %>%
+  
+  ggplot(aes(x = sex, y = percent)) +
+  geom_col(aes(fill = sex), width = 0.5) +
+  ggtitle("Proportion of female and male in the dataset") +
+  xlab("") +
+  ylab("Percentage (%)") +
+  theme_classic() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("brown3", "burlywood")) +
+  scale_y_continuous(labels = scales::percent)
+
+ggplotly(plot_sex, tooltip = c("x","y"))
+```
+
+The percentage of females in the data is 49% and the percentage of males is 51%, which indicates that the data is balanced in terms of sex.
+
+###	Distribution of individuals by number of children
+
+```{r}
+tab <- insurance %>%
+  filter(children == 0 | children == 1) %>%
+  group_by(children) %>%
+  summarise(Count = n())
+
+t1 <- insurance %>%
+  filter(children <= 2) %>%
+  summarise(n = n())
+
+t2 <- insurance %>%
+  filter(children >= 3) %>%
+  summarise(n = n())
+
+t3 <- insurance %>%
+  filter(children == 1 | children == 3) %>%
+  summarise(n = n())
+
+t4 <- insurance %>%
+  filter(children >= 2 & children <= 4) %>%
+  summarise(n = n())
+
+tab <- rbind(tab, data.frame("children"=c("less than 2","more than 3","1 or 3",
+                        "between 2 and 4"), "Count" = c(t1$n,t2$n,t3$n, t4$n)))
+
+plot_children <- ggplot(tab,aes(x = children, y = Count)) +
+  geom_col(fill = "brown3") +
+    ggtitle("Count of individuals by number of children") +
+  xlab("Children") +
+  ylab("Count") +
+  theme_classic() 
+
+ggplotly(plot_children)
+```
+
+```{r}
+# a. individuals that have no children
+# b.	Individuals that have 1 child
+tab2 <- insurance %>%
+  filter(children == 0 | children == 1) %>%
+  group_by(children) %>%
+  summarise(n = paste0(round(n()/nrow(insurance)*100,2)," %"))
+
+# c.	Individuals that have less than 2 children
+p1 <- insurance %>%
+  filter(children <= 2) %>%
+  summarise(n = paste0(round(n()/nrow(insurance)*100,2)," %"))
+
+# d.	Individuals that have more than 3 children
+p2 <- insurance %>%
+  filter(children > 3) %>%
+  summarise(n = paste0(round(n()/nrow(insurance)*100,2)," %"))
+
+# e.	Individuals that have 1 or 3 children
+p3 <- insurance %>%
+  filter(children == 1 | children ==3) %>%
+  summarise(n = paste0(round(n()/nrow(insurance)*100,2)," %"))
+
+# f.	Individuals that have between 2 and 4 children
+p4 <- insurance %>%
+  filter(children >= 2 & children <= 4) %>%
+  summarise(n = paste0(round(n()/nrow(insurance)*100,2)," %"))
+
+tab2 <- rbind(tab2,data.frame("children" = c("less than 2 children",
+  "more than 3 children","1 or 3 children","between 2 and 4 children"),
+  "n" = c(p1$n,p2$n,p3$n,p4$n)))
+
+kbl(tab2,caption = 
+      "Proportion of individuals depending on number of children",
+      col.names = c("Number of children","Proportion"))%>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+The majority of individuals in the dataset have less than 2 children (85.05%). Also, 42.9% of individuals don't have any children while only 3.21% have more than 3 children.
+
+### Distribution of individuals by smoking status
+
+```{r}
+plot_smoker <- insurance %>%
+  group_by(smoker) %>%
+  summarise(Count = n()) %>%
+
+  ggplot(aes(x = smoker, y = Count)) +
+  geom_bar(stat = "identity", width = 0.5, aes(fill = smoker)) +
+  ggtitle("Count of smokers and non smokers") +
+  xlab("Smoker") +
+  ylab("Count") +
+  theme_classic() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("brown3", "burlywood"))
+
+ggplotly(plot_smoker,tooltip = c("y","x"))
+```
+
+```{r}
+tab3 <- insurance %>%
+  group_by(smoker) %>%
+  summarise(n = paste0(round(n()/nrow(insurance)*100,2)," %"))
+
+kbl(tab3,caption = "Proportion of smokers and non smokers",
+      col.names = c("Smoker","Proportion")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+The majority of individuals in the data are non smokers (79.52%).
+
+### Distribution of individuals by region
+
+```{r}
+tab4 <- insurance %>%
+  group_by(region) %>%
+  summarise(Count = n())
+
+plot_region <- ggplot(tab4, aes(x = region, y = Count)) +
+  geom_bar(stat = "identity", width = 0.5, fill = "brown3") +
+  ggtitle("Count of individuals by region") +
+  xlab("Region") +
+  ylab("Count") +
+  theme_classic()
+
+ggplotly(plot_region,tooltip = c("y","x"))
+```
+
+```{r}
+tab7 <- insurance %>%
+  group_by(region) %>%
+  summarise(Count = paste0(round(n()/nrow(insurance)*100,2)," %"))
+
+kbl(tab7, caption = "Proportion of individuals in each region",
+      col.names = c("Region","Proportion")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+Individuals in the data sample are distributed almost evenly among the four regions, with southeast being the most common region in the data (27.2%)
+
+### Distribution of individuals by age
+
+```{r}
+plot_age <- insurance %>%
+  mutate(Age = ifelse(age < 20,"less than 20",ifelse(age > 40 ,"over 40",
+            ifelse(age >= 20 & age <= 40,"between 20 and 40","0")))) %>%
+  filter(Age != "0") %>%
+  group_by(Age) %>%
+  summarise(Count = n()) %>%
+  arrange(-Count) %>%
+
+  ggplot(aes(x = reorder(Age, -Count), y = Count, text = paste0("Age: ",Age))) +
+  geom_bar(stat = "identity", width = 0.5, fill = "brown3") +
+  ggtitle("Count of individuals by age") +
+  xlab("Age") +
+  ylab("Count") +
+  theme_classic()
+
+ggplotly(plot_age,tooltip = c("y","text"))
+```
+
+```{r}
+insurance %>%
+  mutate(countage1 = ifelse(age < 20,"less than 20",ifelse(age > 40,"over 40",
+                  ifelse(age >= 20 & age <= 40,"between 20 and 40","0")))) %>%
+  filter(countage1 != "0") %>%
+  group_by(countage1) %>%
+  summarise(n = paste0(round(n()/nrow(insurance)*100,2)," %")) %>%
+  kbl(caption = "Proportion of individuals in each age range",
+        col.names = c("Age range","Proportion")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+Individuals aged less than 20 years old make only 10.24% of the data, as the majority is aged over 40 years old (47.61%).
+
+### Distribution of individuals by insurance charges
+
+```{r}
+insurance %>%
+  filter(charges > mean(charges)) %>%
+  summarise(n = n(),proportion = 
+              paste0(round(n()/nrow(insurance)*100,2)," %")) %>%
+  kbl(caption = 
+          "Count and proportion of individuals with charges over the average",
+          col.names = c("Count","Proportion")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+We find that 31.39% of individuals in the data have charges over the average, which means that these individuals have some extreme charges values that pulled the average.
+
+### Distribution of BMI
+
+```{r}
+plot_bmi <- insurance%>%
+  ggplot(aes(x = bmi)) + 
+  geom_histogram(fill = "brown3",color = "white") +
+  ggtitle("Histogram of distribution of BMI") +
+  xlab("BMI") +
+  ylab("Count") +
+  theme_classic()
+
+ggplotly(plot_bmi)
+```
+
+The distribution of BMI looks symmetrical and centered around 30.
+
+## Bivariate analysis: relationship between charges and other factors
+
+In this section, we analyze the relationship between insurance charges and each one of the factors from the data using tables and visualizations.
+
+```{r}
+chargesVsAge <- insurance %>%
+
+ggplot(aes(x = charges, y = age)) + 
+    geom_point(color = "brown3")+
+  geom_smooth(method = "lm") +
+  ggtitle("Relationship between charges and age") +
+  theme_classic() +
+  xlab("Charges") +
+  ylab("Age")
+
+ggplotly(chargesVsAge)
+```
+
+There is a moderate linear relationship between insurance charges and age. the relationship is positive, which means that the higher the age the higher the charges.
+
+```{r}
+chargesVsChildren <- insurance %>%
+  group_by(children) %>%
+  summarise(`Mean charges` = mean(charges)) %>%
+  mutate(children = as.character(children)) %>%
+
+  ggplot(aes(x = children , y = `Mean charges`)) +
+  geom_col(fill = "brown3") +
+  ggtitle("Average insurance charges by number of children") +
+  xlab("Children") +
+  ylab("Mean charges") +
+  theme_classic() +
+  theme(legend.position = "none")
+
+ggplotly(chargesVsChildren)
+```
+
+Insurance charges are lower on average for individuals with 5 children compared to the other groups, and higher for individuals with 2 to 3 children.
+
+```{r}
+chargesVsBMI <- insurance %>%
+
+  ggplot(aes(x = bmi, y = charges)) + 
+  geom_point(color = "brown3") +
+  geom_smooth(method = "lm") +
+  ggtitle("Relationship between insurance charges and BMI") +
+  xlab("BMI") +
+  ylab("Insurance charges") +
+  theme_classic() +
+  theme(legend.position = "none")
+
+ggplotly(chargesVsBMI)
+```
+
+There is a moderate positive linear relationship between insurance charges and BMI, indicating that the higher the BMI value the higher are the charges.
+
+```{r}
+chargesVsSex <- insurance %>%
+    ggplot( aes(x = sex, y = charges, fill = sex)) +
+    geom_boxplot() +
+    scale_fill_manual(values = c("brown3", "burlywood")) +
+    theme_classic() +
+    theme(
+      legend.position="none",
+    ) +
+    ggtitle("Boxplot of distribution of charges for female and male") +
+    xlab("") +
+    ylab("Charges") +
+    geom_hline(aes(yintercept = mean(charges)))
+
+ggplotly(chargesVsSex)
+```
+
+The distribution of insurance charges for female is less variant than the distribution of charges for male. The average (median) insurance charges is similar for female and male individuals.
+
+```{r}
+chargesVsSmoker <- insurance %>%
+  group_by(smoker) %>%
+  summarise(`Mean charges` = mean(charges)) %>%
+  
+  ggplot(aes(x = smoker, y = `Mean charges`)) +
+  geom_bar(stat = "identity", width = 0.5, aes(fill = smoker)) +
+  ggtitle("Average insurance charges by smoking status") +
+  xlab("Smoker") +
+  ylab("Mean charges") +
+  theme_classic() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("brown3", "burlywood"))
+
+ggplotly(chargesVsSmoker,tooltip = c("y","x"))
+```
+
+Insurance charges are meaningfully higher on average for smokers compared to non-smokers.
+
+## Bivariate analysis on filtered data
+
+```{r}
+chargesVsSmoker_F1 <- insurance %>%
+  filter(bmi >= 30 & bmi <= 40) %>%
+  group_by(smoker) %>%
+  summarise(`Mean charges` = mean(charges)) %>%
+  
+  ggplot(aes(x = smoker, y = `Mean charges`)) +
+  geom_bar(stat = "identity", width = 0.5, aes(fill = smoker)) +
+  ggtitle("Average insurance charges by smoking status (30<BMI<40)") +
+  xlab("Smoker") +
+  ylab("Mean charges") +
+  theme_classic() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("brown3", "burlywood"))
+
+ggplotly(chargesVsSmoker_F1,tooltip = c("y","x"))
+```
+
+We notice that also for the group of individuals with BMI between 30 and 40, insurance charges are meaningfully higher on average for smokers compared to non-smokers.
+
+```{r}
+chargesVsSmoker_F2 <- insurance %>%
+  filter(sex == "female") %>%
+  group_by(smoker) %>%
+  summarise(`Average charges` = mean(charges)) %>%
+
+  ggplot(aes(x = smoker, y = `Average charges`)) +
+  geom_bar(stat = "identity", width = 0.5, aes(fill = smoker)) +
+  ggtitle("Average charges for smoker and non-smoker females") +
+  xlab("Smoker") +
+  ylab("Average charges") +
+  theme_classic() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("brown3", "burlywood"))
+
+ggplotly(chargesVsSmoker_F2,tooltip = c("y"))
+```
+
+For only female individuals, insurance charges are noticeably higher on average for smokers compared to non-smokers.
+
+```{r}
+insurance %>%
+  filter(charges < mean(charges)) %>%
+  group_by(smoker) %>%
+  summarise(n = paste0(round(n()/nrow(insurance)*100,2)," %"),
+  nn = paste0(round(n()/nrow(insurance[insurance$charges < 
+                  mean(insurance$charges),])*100,2)," %")) %>%
+  kbl(caption = 
+"Proportion of smokers and non smokers with charges below the global average",
+col.names = c("Smoker","Proportion from the entire data",
+              "Proportion from individuals with charges below the average")) %>%
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"))
+```
+
+The proportion of non-smokers with charges below the average is 68.54% of the entire data which is meaningfully higher compared to the proportion of smokers (0.07%), which indicates that insurance charges are mostly higher than average for smokers.
+
+```{r}
+chargesVsSex_F1 <- insurance %>%
+  filter(smoker == "no", children > 1) %>%
+  group_by(sex) %>%
+  summarise(`Average charges` = mean(charges)) %>%
+  
+  ggplot(aes(x = sex, y = `Average charges`)) +
+  geom_bar(stat = "identity", width = 0.5, aes(fill = sex)) +
+  ggtitle(
+"Average charges for non-smoker individuals with at least 2 children by sex") +
+  xlab("") +
+  ylab("Average charges") +
+  theme_classic() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("brown3", "burlywood"))
+
+ggplotly(chargesVsSex_F1,tooltip = c("y"))
+```
+
+For non-smokers with less than 2 children, we notice that female have higher insurance charges on average compared to male individuals.
+
+```{r}
+chargesVsSex_F2 <- insurance %>%
+  filter(bmi > 35 , region == "southwest") %>%
+  group_by(sex) %>%
+  summarise( `Average charges` = mean(charges)) %>%
+  
+  ggplot(aes(x = sex, y = `Average charges`)) +
+  geom_bar(stat = "identity", width = 0.5, aes(fill = sex)) +
+  ggtitle(
+ "Average charges by sex for individuals from the southwest with BMI larger than 35") +
+  xlab("") +
+  ylab("Average charges") +
+  theme_classic() +
+  theme(legend.position = "none",plot.title = element_text(size = 10)) +
+  scale_fill_manual(values = c("brown3", "burlywood"))
+
+ggplotly(chargesVsSex_F2,tooltip = c("y"))
+```
+
+For individuals from southwest with BMI larger than 35, we notice that male have higher insurance charges on average compared to female individuals.
+
+## Multivariate analysis
+
+```{r}
+ChargesVsSmoker.Sex_F1 <- insurance %>%
+  filter(bmi >= 30 & bmi <= 40) %>%
+  group_by(smoker,sex) %>%
+  summarise(`Mean charges` = mean(charges)) %>%
+  
+  ggplot(aes(x = smoker, y = `Mean charges`)) +
+  geom_bar(stat = "identity",aes(fill = sex), position = "dodge", width = 0.7) +
+  ggtitle("Average insurance charges by smoking status and sex (30<BMI<40)") +
+  xlab("Smoker") +
+  ylab("Mean charges") +
+  theme_classic() +
+  scale_fill_manual(values = c("brown3", "burlywood"))
+
+ggplotly(ChargesVsSmoker.Sex_F1)
+```
+
+On average, insurance charges are similar for non-smoker males and females, and for smoker males and females.
+
+```{r}
+ChargesVsSmoker.Sex.Region_F <- insurance %>%
+  filter(bmi >= 30 & bmi <= 40) %>%
+  group_by(smoker,sex,region) %>%
+  summarise(`Mean charges` = mean(charges)) %>%
+  
+  ggplot(aes(x = smoker, y = `Mean charges`)) +
+  geom_bar(stat = "identity",aes(fill = sex), position = "dodge") +
+  facet_wrap(~region) +
+  ggtitle("Average insurance charges by smoking status and sex and region (30<BMI<40)") +
+  xlab("Smoker") +
+  ylab("Mean charges") +
+  theme_classic() +
+  theme(plot.title = element_text(size = 10)) +
+  scale_fill_manual(values = c("brown3", "burlywood")) 
+
+ggplotly(ChargesVsSmoker.Sex.Region_F)
+```
+
+On average, insurance charges are similar among smokers regardless of their sex and region, and similar among non-smokers regardless of their sex and region.
+
+```{r}
+ChargesVsSmoker.Sex_F2 <- insurance %>%
+  filter(children > 2 , charges > mean(charges)) %>%
+  group_by(sex,smoker) %>%
+  summarise(n = round(n()/nrow(insurance)*100,2),
+  Percentage = round(n()/nrow(insurance[insurance$children > 2 &
+      insurance$charges > mean(insurance$charges),])*100,2)) %>%
+
+  ggplot(aes(x = smoker, y = Percentage,text = 
+          paste0("Percentage: ", Percentage, "%"))) +
+  geom_bar(stat = "identity", width = 0.5, aes(fill = smoker)) +
+  ggtitle("Percentage of smokers and non-smokers with more than 2 children and charges over the average by sex") +
+  xlab("Smoker") +
+  ylab("Percentage (%)") +
+  theme_classic() +
+  theme(legend.position = "none", plot.title = element_text(size = 10)) +
+  scale_fill_manual(values = c("brown3", "burlywood")) +
+  facet_wrap(~sex)
+
+ggplotly(ChargesVsSmoker.Sex_F2,tooltip = c("text"))
+```
+
+the majority of individuals with more than 2 children and charges over the average are smoker males (39.44%) followed by non-smoker females (25.35%) and the minority is non-smoker males (14.08%)
+
+```{r}
+ChargesVsSex.Region_F1 <- insurance %>%
+  filter(smoker == "yes", charges > mean(charges)) %>%
+  group_by(region,sex) %>%
+  summarise(n = round(n()/nrow(insurance[insurance$smoker == "yes" & 
+          insurance$charges > mean(insurance$charges),])*100,2)) %>%
+  
+  ggplot(aes(x = sex, y = n,text = paste0("Percentage: ", n, "%"))) +
+  geom_bar(stat = "identity", width = 0.5, aes(fill = sex)) +
+  ggtitle("Percentage of smokers with charges over the average in each region by sex") +
+  xlab("") +
+  ylab("Percentage (%)") +
+  theme_classic() +
+  theme(legend.position = "none") +
+  scale_fill_manual(values = c("brown3", "burlywood")) +
+  facet_wrap(~region)
+
+ggplotly(ChargesVsSex.Region_F1,tooltip = c("text"))
+```
+
+The majority of smokers with charges over the average are males from southeast (20.15%), followed by males from northeast and southwest (13.55% each), and the minority are females from southwest (7.69%)
+
+```{r}
+ChargesVsSex.Region_F2 <- insurance %>%
+    filter(bmi >= 35 & bmi <= 45) %>%
+  
+    ggplot( aes(x = sex, y = charges, fill = sex)) +
+    geom_boxplot() +
+    scale_fill_manual(values = c("brown3", "burlywood")) +
+    theme_classic() +
+    theme(
+      legend.position="none",plot.title = element_text(size = 10)
+    ) +
+    ggtitle("Boxplot of distribution of charges for individuals with BMI between 35 and 45 by sex and region") +
+    xlab("") +
+    ylab("Charges") +
+    facet_wrap(~region)
+
+ggplotly(ChargesVsSex.Region_F2)
+```
+
+The boxplots above illustrate the distribution of charges for individuals with BMI between 35 and 45 by sex and region. We notice that the medians of insurance charges for females and males are very close in each region. The boxes sizes of females and males are different within each region which indicates that the variation of charges is different between them. We also observe that there are some outlier values in the data, like in the group of females from southeast and males from northeast.
