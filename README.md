@@ -20,7 +20,7 @@ In this project, we conduct an exploratory data analysis (EDA) on an insurance c
 ### Univariate analysis
 In this section, we used tables and interactive (ggplotly) charts to explore the distribution of each feature from the data set in order to understand the data sample we are working with.
 
-We derived the following insights from this sections:
+We derived the following insights from this section:
 * The percentage of females in the data is 49% and the percentage of males is 51%, which indicates that the data is balanced in terms of sex.
 * The majority of individuals in the dataset have less than 2 children (85.05%). Also, 42.9% of individuals don’t have any children while only 3.21% have more than 3 children.
 * The majority of individuals in the data are non smokers (79.52%).
