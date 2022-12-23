@@ -33,7 +33,7 @@ We derived the following insights from this section:
 In this section, we analyze the relationship between insurance charges and each one of the factors from the data using tables and visualizations.
 
 We derived the following insights from the bivariate analysis section:
-* There is a moderate linear relationship between insurance charges and age. the relationship is positive, which means that the higher the age the higher the charges.
+* There is a moderate linear relationship between insurance charges and age. The relationship is positive, which means that the higher the age the higher the charges.
 * Insurance charges are lower on average for individuals with 5 children compared to the other groups, and higher for individuals with 2 to 3 children.
 * There is a moderate positive linear relationship between insurance charges and BMI, indicating that the higher the BMI value the higher are the charges.
 * The distribution of insurance charges for female is less variant than the distribution of charges for male. The average (median) insurance charges is similar for female and male individuals.
