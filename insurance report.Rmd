@@ -62,7 +62,7 @@ stargazer(insurance,title = "Statistical summary",type = "html")
 
 ## Univariate analysis
 
-In this section, we are exploring, using charts and tables, the distribution of values of each features from the data set in order to understand the data sample we are working with.
+In this section, we are exploring, using charts and tables, the distribution of values of each feature from the data set in order to understand the data sample we are working with.
 
 ### The proportion of females and males in the data set
 
@@ -481,7 +481,7 @@ chargesVsSex_F2 <- insurance %>%
 ggplotly(chargesVsSex_F2,tooltip = c("y"))
 ```
 
-For individuals from southwest with BMI larger than 35, we notice that male have higher insurance charges on average compared to female individuals.
+For individuals from southwest with BMI larger than 35, we notice that male individuals have higher insurance charges on average compared to female individuals.
 
 ## Multivariate analysis
 
