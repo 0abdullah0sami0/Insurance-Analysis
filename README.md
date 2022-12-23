@@ -52,7 +52,7 @@ We derived the following insights from the bivariate analysis section:
 ### Multivariate analysis
 In this section, we aim to understand the relationship between insurance charges and multiple factors from the data on filtered and unfiltered samples of the data, using tables and visualizations.
 
-We derived the following insights from the bivariate analysis section:
+We derived the following insights from the multivariate analysis section:
 * On average, insurance charges are similar for non-smoker males and females, and for smoker males and females.
 * On average, insurance charges are similar among smokers regardless of their sex and region, and similar among non-smokers regardless of their sex and region.
 * the majority of individuals with more than 2 children and charges over the average are smoker males (39.44%) followed by non-smoker females (25.35%) and the minority is non-smoker males (14.08%)
