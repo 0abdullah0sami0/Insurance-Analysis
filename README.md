@@ -13,7 +13,7 @@
 
 
 ## Project Description
-In this project, we conduct and exploratory data analysis (EDA) on an insurance charges dataset to discover and understand the relationship between insurance charges and different health and demographic factors (age, sex, region, BMI, smoker, number of children). The data set is from the [GitHub repository of Machine Learning with R datasets](https://github.com/stedy/Machine-Learning-with-R-datasets/blob/master/insurance.csv).
+In this project, we conduct an exploratory data analysis (EDA) on an insurance charges dataset to discover and understand the relationship between insurance charges and different health and demographic factors (age, sex, region, BMI, smoker, number of children). The data set is from the [GitHub repository of Machine Learning with R datasets](https://github.com/stedy/Machine-Learning-with-R-datasets/blob/master/insurance.csv).
 
 ## Data analysis insights
 
